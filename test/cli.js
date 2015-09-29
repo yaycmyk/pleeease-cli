@@ -162,6 +162,7 @@ describe('cli', function () {
       remove = true;
       sinon.stub(console, 'log');
     });
+
     afterEach(function () {
       if (remove) {
         removeFile('app.min.css');
@@ -172,76 +173,62 @@ describe('cli', function () {
     it('compiles', function (done) {
       cli = new CLI('in.css');
       sinon.spy(cli, 'compile');
-      var p = Promise.resolve(cli)
-        .then(function (r) {
-          cli.compile();
-          return cli._compile(cli.files.inputs, cli.files.output);
-        })
-        .then(function (result) {
-          result.should.be.eql('.in{color:#FFF}');
-          console.log.should.have.been.calledOnce;
-          console.log.should.have.been.calledWithMatch('Compile 1 file(s) [in.css] to app.min.css');
-          console.log.restore();
-          done();
-        })
-        .catch(function (err) {
-          console.log.restore();
-          throw err;
-        })
-        .catch(done);
+
+      cli.compile().then(function(result) {
+        result.should.be.eql('.in{color:#FFF}');
+        console.log.should.have.been.calledOnce;
+        console.log.should.have.been.calledWithMatch('Compile 1 file(s) [in.css] to app.min.css');
+        console.log.restore();
+        done();
+      }, function(error) {
+        console.log.restore();
+        throw error;
+      });
     });
 
     it('compiles multiple', function (done) {
       cli = new CLI(['in.css', 'in2.css']);
       sinon.spy(cli, 'compile');
-      var p = Promise.resolve(cli)
-        .then(function (r) {
-          cli.compile();
-          return cli._compile(cli.files.inputs, cli.files.output);
-        })
-        .then(function (result) {
-          result.should.be.eql('.in{color:#FFF}.in2{color:#000}');
-          console.log.should.have.been.calledOnce;
-          console.log.should.have.been.calledWithMatch('Compile 2 file(s) [in.css,in2.css] to app.min.css');
-          console.log.restore();
-          done();
-        })
-        .catch(function (err) {
-          console.log.restore();
-          throw err;
-        })
-        .catch(done);
+
+      cli.compile().then(function(result) {
+        result.should.be.eql('.in{color:#FFF}.in2{color:#000}');
+        console.log.should.have.been.calledOnce;
+        console.log.should.have.been.calledWithMatch('Compile 2 file(s) [in.css,in2.css] to app.min.css');
+        console.log.restore();
+        done();
+      }, function(error) {
+        console.log.restore();
+        throw error;
+      });
     });
 
-    it('compiles one specific file (watched)', function () {
+    it('compiles one specific file (watched)', function (done) {
       cli = new CLI('in.css');
       sinon.spy(cli, 'compile');
-      try {
-        cli.compile('in.css');
+
+      cli.compile('in.css').then(function(result) {
         console.log.should.have.been.calledOnce;
         console.log.firstCall.should.have.been.calledWithMatch('Recompiled file in.css');
         console.log.restore();
-      } catch (err) {
+        done();
+      }, function(error) {
         console.log.restore();
-        throw err;
-      }
+        throw error;
+      });
     });
 
-    it('log errors when compile', function () {
+    it('log errors raised during compilation', function (done) {
       remove = false;
       cli = new CLI('error/error.css');
       sinon.spy(cli, 'compile');
-      try {
-        cli.compile();
+
+      cli.compile().catch(function() {
         console.log.should.have.been.calledOnce;
         console.log.should.have.been.calledWithMatch('Compilation error');
         console.log.restore();
-      } catch (err) {
-        console.log.restore();
-        throw err;
-      }
+        done();
+      });
     });
-
   });
 
   describe('#watch', function () {
@@ -263,35 +250,13 @@ describe('cli', function () {
       try {
         watcher = cli.watch({persistent: false});
         cli.compile.should.have.been.calledOnce;
-        console.log.should.have.been.calledTwice;
-        console.log.firstCall.should.have.been.calledWithMatch('Compile 1 file(s) [in.css] to app.min.css');
-        console.log.secondCall.should.have.been.calledWithMatch('Watcher is running...');
+        console.log.should.have.been.calledWithMatch('Watching the following files:');
+        console.log.should.have.been.calledWithMatch('Watcher is running...');
         console.log.restore();
       } catch (err) {
         console.log.restore();
         throw err;
       }
-    });
-
-  });
-
-  describe('#ignoredWatch', function () {
-
-    it('ignores files', function () {
-      cli = new CLI('*.css');
-      var ignored = cli.ignoredWatch('out.css');
-      // not ignored
-      (ignored('in.css') === null).should.be.ok;
-      (ignored('in.scss') === null).should.be.ok;
-      (ignored('in.less') === null).should.be.ok;
-      (ignored('in.styl') === null).should.be.ok;
-      (ignored('_in.css') === null).should.be.ok;
-      (ignored('dir/in.css') === null).should.be.ok;
-      // ignored
-      (ignored('out.css') === null).should.not.be.ok;
-      (ignored('.pleeeaserc') === null).should.not.be.ok;
-      (ignored('file.txt') === null).should.not.be.ok;
-      (ignored('file.css.txt') === null).should.not.be.ok;
     });
 
   });
