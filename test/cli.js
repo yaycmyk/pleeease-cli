@@ -272,7 +272,6 @@ describe('cli', function () {
         throw err;
       }
     });
-
   });
 
   describe('#ignoredWatch', function () {
@@ -361,6 +360,28 @@ describe('cli', function () {
         o.should.be.eql(i);
         // remove .pleeeaserc file
         removeFile('.pleeeaserc');
+        done();
+      });
+    });
+
+    it('accepts a custom configuration JSON filename', function (done) {
+      output = 'out';
+
+      // create a non-standard .pleeeaserc-test file
+      var json = '{"in": ["in.css"], "out": "out"}';
+      var pleeeaseRC = fs.writeFileSync('.pleeeaserc-test', json);
+
+      exec(bin + ' compile -c .pleeeaserc-test', function (err, stdout) {
+        if (err) return done(err);
+
+        var i = readFile(input);
+        var o = readFile(output);
+
+        o.should.be.eql(i);
+
+        // cleanup after test
+        removeFile('.pleeeaserc-test');
+
         done();
       });
     });
