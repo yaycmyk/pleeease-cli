@@ -5,7 +5,13 @@ var program = require('commander');
 var CLI     = require('../lib/cli');
 
 var version    = require('../package.json').version;
-var versionPkg = require('../node_modules/pleeease/package.json').version;
+try
+{
+  var versionPkg = require('../node_modules/pleeease/package.json').version;
+} catch(ex)
+{
+  var versionPkg = require('../../pleeease/package.json').version;
+}
 
 program.
     version('pleeease-cli ' + version + '\npleeease     ' + versionPkg).
